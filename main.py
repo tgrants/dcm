@@ -47,9 +47,15 @@ def create_container(name: str):
 			ports={"8080/tcp": None},
 			volumes={f"/home/code/{name}": {"bind": "/home/coder/project", "mode": "rw"}},
 			network="devnet",
+
+			# Resource limits
+			mem_limit="512m",
+			nano_cpus=500000000, # 1/2 CPU
+			pids_limit=100,
+			restart_policy={"Name": "always"}
 		)
 
-		print(f"Created '{container_name}' | pass {pwd} | https://{subdomain}")
+		print(f"Created '{name}' | pass {pwd} | https://{subdomain}")
 
 	except docker.errors.ImageNotFound:
 		print(f"Docker image '{image}' not found. Try: docker pull {image}")
@@ -63,9 +69,9 @@ def delete_container(name: str):
 		container = docker_client.containers.get(container_name)
 		container.stop()
 		container.remove()
-		print(f"Deleted container '{container_name}'.")
+		print(f"Deleted container '{name}'.")
 	except docker.errors.NotFound:
-		print(f"Container '{container_name}' not found.")
+		print(f"Container '{name}' not found.")
 	except docker.errors.APIError as e:
 		print(f"Docker API error: {e.explanation}")
 
@@ -78,7 +84,7 @@ def list_containers():
 	print("Current containers:")
 	for c in containers:
 		status = c.status
-		name = c.name
+		name = c.name.removeprefix("dev_")
 		host_rule = next(
 			(v for k, v in c.labels.items() if k.startswith("traefik.http.routers.") and ".rule" in k),
 			"N/A"
