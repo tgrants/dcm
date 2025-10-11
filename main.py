@@ -31,9 +31,19 @@ def create_container(name: str):
 		
 		labels = {
 			"traefik.enable": "true",
+
+			# Code server
 			f"traefik.http.routers.{name}.rule": f"Host(`{subdomain}`)",
 			f"traefik.http.routers.{name}.entrypoints": "web",
+			f"traefik.http.routers.{name}.service": f"{name}",
 			f"traefik.http.services.{name}.loadbalancer.server.port": "8080",
+
+			# App
+			f"traefik.http.routers.{name}-flask.rule": f"Host(`{name}-flask.{BASE_DOMAIN}`)",
+			f"traefik.http.routers.{name}-flask.entrypoints": "web",
+			f"traefik.http.routers.{name}-flask.service": f"{name}-flask",
+			f"traefik.http.services.{name}-flask.loadbalancer.server.port": "5000",
+
 			"project": "devhub"
 		}
 
@@ -44,7 +54,7 @@ def create_container(name: str):
 			tty=True,
 			labels=labels,
 			environment={"PASSWORD": pwd},
-			ports={"8080/tcp": None},
+			ports={"8080/tcp": None, "5000/tcp": None},
 			volumes={f"/home/code/{name}": {"bind": "/home/coder/project", "mode": "rw"}},
 			network="devnet",
 
