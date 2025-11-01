@@ -1,0 +1,27 @@
+name: 🐛 Bug Report
+description: Report a bug
+labels: [Bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction Steps
+      description: Steps to reproduce the error, if applicable.
+    validations:
+      required: false
+
+  - type: textarea
+    id: other
+    attributes:
+      label: Other Information
+      description: Any other context or additional information.
+    validations:
+      required: false

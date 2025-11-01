@@ -1,0 +1,27 @@
+name: 🚀 Feature Request
+description: Suggest an idea for this project
+labels: [Feature]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the feature
+      description: A clear and concise description of the feature you are proposing.
+    validations:
+      required: true
+
+  - type: textarea
+    id: other
+    attributes:
+      label: Other Information
+      description: Any other context or additional information.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: ack
+    attributes:
+      label: Acknowledgements
+      options:
+        - label: I may be able to implement this feature request
+          required: false
