@@ -10,16 +10,58 @@ import json
 docker_client = docker.from_env()
 exit_main_loop = False
 
-global BASE_DOMAIN
-
-
 def generate_password(length=10):
 	alphabet = string.ascii_lowercase + string.digits
 	return ''.join(secrets.choice(alphabet) for _ in range(length))
 
 
-def create_container(name: str):
-	image = "codercom/code-server:latest"
+def create_container(cmd):
+	# Checks if a name container name is given
+	try:
+		name = cmd[1]
+		if name == '':
+			raise Exception
+	except:
+		print("Missing container name: c <name>")
+		return
+
+	# Processing the config file from workdir or custom path
+	CONFIG = ""
+	cfg_path = ""
+	try:
+		if "-c" in cmd:
+			if cmd[cmd.index("-c")+1] == "":
+				raise Exception
+			cfg_path=cmd[cmd.index("-c")+1]
+		else:
+			cfg_path="config.json"
+		try:
+			with open(cfg_path) as f:
+				CONFIG = json.load(f)
+		except FileNotFoundError:
+			if cfg_path == "config.json":
+				print("Default config.json missing in working directory!")
+			else:
+				print("Specified config file doesn't exist!")
+			return
+	except Exception:
+		print("Missing argument: -c <filepath>")
+		return
+
+	# Initial checks for the setup script from the config
+	setup_script = ""
+	setup_script_path = str(CONFIG["setup_script_path"]).strip()
+	if setup_script_path == "":
+		print ("No setup script specified. Skipping..!")
+	else:
+		try:
+			setup_script = open(setup_script_path)
+		except FileNotFoundError:
+			print(f"Setup script specified in '{cfg_path}' doesn't exist!")
+			return
+
+	BASE_DOMAIN = CONFIG["base_domain"]
+	image = "codercom/code-server:4.105.1-bookworm"
 	container_name = f"dev_{name}"
 	subdomain = f"{name}.{BASE_DOMAIN}"
 	pwd = generate_password()
@@ -65,6 +107,12 @@ def create_container(name: str):
 			pids_limit=CONFIG["pids_limit"],
 			restart_policy={"Name": "unless-stopped"}
 		)
+
+		# Actually runs the script if it exists
+		if setup_script != "":
+			print(f"Running setup script: {setup_script_path}")
+			container.exec_run(f"bash -c \"{setup_script.read()}\"", user = "root")
+			print("Done.")
 
 		print(f"Created '{name}' | pass {pwd} | https://{subdomain}")
 
@@ -140,7 +188,7 @@ def parse_command(cmd):
 		case "help" | "h":
 			print("h, help - list of commands")
 			print("e, exit - exit the program")
-			print("c, create <name> - Create a new dev container")
+			print("c, create <name> -c <config_path> - Create a new dev container")
 			print("d, delete <name> - Delete an existing container")
 			print("l, list - List all dev containers")
 			print("start <name> - Starts specified container")
@@ -150,7 +198,7 @@ def parse_command(cmd):
 			exit_main_loop = True
 			print("Exiting...")
 		case "c" | "create":
-			create_container(cmd[1])
+			create_container(cmd)
 		case "d" | "delete":
 			delete_container(cmd[1])
 		case "l" | "list":
@@ -161,18 +209,6 @@ def parse_command(cmd):
 			stop_container(cmd[1])
 
 def main():
-	cfg_path="config.json"
-	try:
-		with open(cfg_path) as f:
-			global CONFIG
-			CONFIG = json.load(f)
-	except FileNotFoundError:
-		print("Config file doesn't exist at workdir!")
-		quit(1)
-
-	global BASE_DOMAIN
-	BASE_DOMAIN = CONFIG["base_domain"]
-
 	print("h = help, e = exit")
 	while not exit_main_loop:
 		cmd = input("Enter a command: ")
