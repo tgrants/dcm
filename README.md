@@ -6,9 +6,9 @@ Development Container Manager
 
 ### Installation
 
-* `apt install docker.io docker-compose`
+* Install [Docker Engine](https://docs.docker.com/engine/install)
 * `docker network create devnet`
-* `docker-compose up -d`
+* `docker compose up -d`
 
 ## Configuring
 
